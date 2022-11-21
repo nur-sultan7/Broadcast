@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.nursultan.broadcast.databinding.ActivityMainBinding
@@ -36,27 +35,20 @@ class MainActivity : AppCompatActivity() {
                 putExtra(MyBroadcastReceiver.EXTRA_COUNT, ++clickedCount)
                 localBroadcastReceiver.sendBroadcast(this)
             }
+            Intent(this, MyService2::class.java).apply {
+                startService(this)
+            }
         }
-
-
-        val intentFilter = IntentFilter()
-        intentFilter.apply {
+        IntentFilter().apply {
             addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
             addAction(Intent.ACTION_BATTERY_LOW)
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(MyBroadcastReceiver.ACTION_CLICKED)
+            localBroadcastReceiver.registerReceiver(broadcastReceiver, this)
         }
-        localBroadcastReceiver.registerReceiver(broadcastReceiver, intentFilter)
         IntentFilter().apply {
             addAction("loading")
-            registerReceiver(progressReceiver, this)
-        }
-
-        Intent(this, MyService::class.java).apply {
-            startService(this)
-        }
-        Intent(this, MyService2::class.java).apply {
-            startService(this)
+            localBroadcastReceiver.registerReceiver(progressReceiver, this)
         }
     }
 
