@@ -4,40 +4,40 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
 import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.nursultan.broadcast.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private val localBroadcastReceiver by lazy {
         LocalBroadcastManager.getInstance(this)
     }
-    private lateinit var progressBar: ProgressBar
     private val broadcastReceiver = MyBroadcastReceiver()
-    private val loadedReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                "loaded" -> {
-                    val percent = intent.getIntExtra("progress", 0)
-                    progressBar.progress = percent
+    private val progressReceiver = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            when (p1?.action) {
+                "loading" -> {
+                    binding.progressBar.progress = p1.getIntExtra("progress", 0)
                 }
             }
         }
-
+    }
+    private val binding: ActivityMainBinding by lazy {
+        ActivityMainBinding.inflate(layoutInflater)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        findViewById<Button>(R.id.btnClick).setOnClickListener {
+        setContentView(binding.root)
+        binding.btnClick.setOnClickListener {
             Intent(MyBroadcastReceiver.ACTION_CLICKED).apply {
-                putExtra(MyBroadcastReceiver.EXTRA_COUNT, clickedCount++)
+                putExtra(MyBroadcastReceiver.EXTRA_COUNT, ++clickedCount)
                 localBroadcastReceiver.sendBroadcast(this)
             }
         }
-        progressBar = findViewById(R.id.progressBar)
+
 
         val intentFilter = IntentFilter()
         intentFilter.apply {
@@ -47,10 +47,15 @@ class MainActivity : AppCompatActivity() {
             addAction(MyBroadcastReceiver.ACTION_CLICKED)
         }
         localBroadcastReceiver.registerReceiver(broadcastReceiver, intentFilter)
-        localBroadcastReceiver.registerReceiver(loadedReceiver, IntentFilter().apply {
-            addAction("loaded")
-        })
+        IntentFilter().apply {
+            addAction("loading")
+            registerReceiver(progressReceiver, this)
+        }
+
         Intent(this, MyService::class.java).apply {
+            startService(this)
+        }
+        Intent(this, MyService2::class.java).apply {
             startService(this)
         }
     }
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         localBroadcastReceiver.unregisterReceiver(broadcastReceiver)
+        unregisterReceiver(progressReceiver)
     }
 
     companion object {
